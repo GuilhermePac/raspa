@@ -1,0 +1,935 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Raspadinha bônus</title>
+<!-- Fonte opcional: se não carregar (offline), cai para a fonte do sistema -->
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,400..800&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #EDEFF3;
+    --card: #FFFFFF;
+    --ink: #17213A;
+    --muted: #5B6478;
+    --line: #DCE0E8;
+    --brand: #0E9F6E;
+    --brand-ink: #08734F;
+    --brand-soft: #E3F6EE;
+    --gold: #F5B800;
+    --gold-deep: #D99A00;
+    --font: "Bricolage Grotesque", ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  }
+
+  * { box-sizing: border-box; margin: 0; }
+  html { -webkit-text-size-adjust: 100%; }
+  body {
+    font-family: var(--font);
+    color: var(--ink);
+    background: var(--bg);
+    min-height: 100dvh;
+    line-height: 1.45;
+    -webkit-font-smoothing: antialiased;
+    padding-bottom: env(safe-area-inset-bottom, 0px);
+  }
+  button { font: inherit; }
+
+  /* ---------- Barra de teste (só existe no protótipo) ---------- */
+  .proto {
+    position: sticky; top: 0; z-index: 20;
+    display: flex; flex-wrap: wrap; align-items: center; justify-content: center;
+    gap: 8px 12px;
+    padding: 10px 12px;
+    padding-top: calc(10px + env(safe-area-inset-top, 0px));
+    background: rgba(237, 239, 243, .92);
+    -webkit-backdrop-filter: blur(8px);
+    backdrop-filter: blur(8px);
+    border-bottom: 1px dashed #B9C0CC;
+  }
+  .proto-label { font-size: 12px; font-weight: 600; color: var(--muted); }
+  .seg {
+    display: inline-flex; gap: 2px; padding: 3px;
+    background: #fff; border: 1px solid var(--line); border-radius: 999px;
+  }
+  .seg button {
+    border: 0; background: transparent; cursor: pointer;
+    padding: 8px 14px; border-radius: 999px;
+    font-size: 13px; font-weight: 600; color: var(--muted);
+    transition: background .2s, color .2s;
+  }
+  .seg button[aria-pressed="true"] { background: var(--ink); color: #fff; }
+  .seg button:focus-visible, .btn:focus-visible, .link-btn:focus-visible {
+    outline: 2px solid var(--brand); outline-offset: 2px;
+  }
+
+  /* ---------- Página e ticket ---------- */
+  .page {
+    display: flex; flex-direction: column; align-items: center;
+    padding: 20px 16px 40px;
+  }
+  .ticket {
+    position: relative;
+    width: 100%; max-width: 440px;
+    background: var(--card);
+    border-radius: 24px;
+    box-shadow:
+      0 1px 2px rgba(23, 33, 58, .06),
+      0 18px 40px -16px rgba(23, 33, 58, .25);
+  }
+
+  .ticket-head { padding: 28px 24px 18px; text-align: center; }
+  .check {
+    width: 52px; height: 52px; margin: 0 auto 14px;
+    display: grid; place-items: center;
+    border-radius: 50%;
+    background: var(--brand-soft); color: var(--brand);
+  }
+  .ticket-head h1 { font-size: 26px; font-weight: 800; letter-spacing: -.02em; line-height: 1.15; }
+  .lead { margin-top: 6px; font-size: 15px; color: var(--muted); }
+
+  .numbers-block { margin-top: 16px; }
+  .numbers-label { font-size: 13px; color: var(--muted); }
+  .numbers {
+    list-style: none; padding: 0; margin-top: 8px;
+    display: flex; flex-wrap: wrap; justify-content: center; gap: 6px;
+  }
+  .numbers li {
+    padding: 5px 10px; border-radius: 8px;
+    background: var(--brand-soft); color: var(--brand-ink);
+    font-weight: 700; font-size: 14px; letter-spacing: .04em;
+    font-variant-numeric: tabular-nums;
+  }
+
+  /* Picote do ticket */
+  .perf { position: relative; height: 28px; }
+  .perf::before {
+    content: ""; position: absolute; left: 22px; right: 22px; top: 50%;
+    border-top: 2px dashed var(--line);
+  }
+  .notch {
+    position: absolute; top: 50%; width: 28px; height: 28px; margin-top: -14px;
+    border-radius: 50%; background: var(--bg);
+  }
+  .notch--l { left: -14px; box-shadow: inset -3px 0 4px -2px rgba(23, 33, 58, .10); }
+  .notch--r { right: -14px; box-shadow: inset 3px 0 4px -2px rgba(23, 33, 58, .10); }
+
+  /* ---------- Área da raspadinha ---------- */
+  .scratch-section { padding: 6px 20px 24px; text-align: center; }
+  .bonus-title { font-size: 20px; font-weight: 800; letter-spacing: -.01em; }
+  .bonus-sub { margin-top: 2px; margin-bottom: 16px; font-size: 15px; color: var(--muted); min-height: 1.45em; }
+
+  .scratch {
+    position: relative;
+    width: 100%;
+    aspect-ratio: 3 / 2;
+    border-radius: 18px;
+    overflow: hidden;
+    isolation: isolate;
+    background: #F3F5F9;
+    box-shadow:
+      0 0 0 1px rgba(23, 33, 58, .08),
+      0 12px 26px -14px rgba(23, 33, 58, .45);
+    -webkit-user-select: none; user-select: none;
+    -webkit-touch-callout: none;
+    -webkit-tap-highlight-color: transparent;
+    touch-action: none;
+  }
+  /* iOS < 15 não suporta aspect-ratio: sem isso a área ficava com altura 0 */
+  @supports not (aspect-ratio: 3 / 2) {
+    .scratch { height: 0; padding-top: 66.666%; }
+  }
+  .scratch canvas {
+    position: absolute; inset: 0; width: 100%; height: 100%;
+    touch-action: none;
+    -webkit-user-select: none; user-select: none;
+    -webkit-touch-callout: none;
+    display: block;
+    cursor: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='32' height='32' viewBox='0 0 32 32'%3E%3Ccircle cx='16' cy='16' r='13' fill='%23F5B800' stroke='%23B37F00' stroke-width='2'/%3E%3Ccircle cx='16' cy='16' r='9' fill='none' stroke='%23FFE58A' stroke-width='1.5'/%3E%3Ctext x='16' y='21' font-size='13' font-weight='700' text-anchor='middle' fill='%23805A00' font-family='Arial'%3E$%3C/text%3E%3C/svg%3E") 16 16, crosshair;
+  }
+  .scratch canvas.is-clearing {
+    opacity: 0; transform: scale(1.04);
+    transition: opacity .6s ease, transform .6s ease;
+    pointer-events: none;
+  }
+  .scratch canvas.is-gone { visibility: hidden; }
+
+  /* Prêmio por baixo */
+  .prize {
+    position: absolute; inset: 0; z-index: -1;
+    display: grid; place-items: center;
+    padding: 16px; text-align: center; overflow: hidden;
+  }
+  .prize--none {
+    background: repeating-linear-gradient(135deg, #F3F5F9 0 14px, #EDF0F5 14px 28px);
+  }
+  .prize-inner { position: relative; }
+  .prize-emoji { display: block; font-size: 40px; line-height: 1; }
+  .prize-title { margin-top: 10px; font-size: 22px; font-weight: 800; text-transform: uppercase; letter-spacing: .01em; line-height: 1.1; }
+  .prize-sub { margin-top: 6px; font-size: 14px; color: var(--muted); }
+
+  .prize--win {
+    background: radial-gradient(circle at 50% 45%, #FFE58A 0, var(--gold) 65%, #E0A300 100%);
+  }
+  .rays {
+    position: absolute; inset: -60%;
+    background: repeating-conic-gradient(from 0deg, rgba(255, 255, 255, .30) 0 9deg, transparent 9deg 18deg);
+    -webkit-mask: radial-gradient(circle, #000 0, transparent 55%);
+    mask: radial-gradient(circle, #000 0, transparent 55%);
+  }
+  .prize-kicker { margin-top: 4px; font-size: 15px; font-weight: 800; letter-spacing: .08em; text-transform: uppercase; }
+  .prize-label { font-size: 13px; font-weight: 700; text-transform: uppercase; letter-spacing: .06em; opacity: .75; }
+  .prize-amount {
+    font-size: clamp(46px, 14vw, 62px); font-weight: 800; letter-spacing: -.03em; line-height: 1;
+    font-variant-numeric: tabular-nums;
+    text-shadow: 0 2px 0 rgba(255, 255, 255, .45);
+  }
+  .prize-amount .cur { font-size: .45em; margin-right: .12em; letter-spacing: 0; }
+
+  .prize.is-revealed .prize-inner { animation: pop .6s cubic-bezier(.2, 1.5, .4, 1) both; }
+  .prize--win.is-revealed .rays { animation: spin 24s linear infinite; }
+
+  /* Progresso e dicas */
+  .meter {
+    max-width: 220px; height: 6px; margin: 14px auto 0;
+    background: #E6E9EF; border-radius: 99px; overflow: hidden;
+  }
+  .meter span {
+    display: block; width: 0; height: 100%;
+    background: linear-gradient(90deg, var(--brand), #34C98E);
+    transition: width .15s ease-out;
+  }
+  .hint { margin-top: 10px; font-size: 14px; color: var(--muted); }
+  .link-btn {
+    margin-top: 4px; padding: 6px; border: 0; background: none; cursor: pointer;
+    font-size: 13px; color: var(--muted); text-decoration: underline; text-underline-offset: 3px;
+  }
+
+  /* Resultado */
+  .outcome { margin-top: 18px; animation: rise .45s ease both; }
+  .outcome-text { font-size: 15px; color: var(--ink); max-width: 34ch; margin: 0 auto; }
+  .btn {
+    display: block; width: 100%; margin-top: 14px;
+    padding: 15px 18px; border: 0; border-radius: 14px; cursor: pointer;
+    font-size: 16px; font-weight: 700; text-align: center; text-decoration: none;
+    transition: transform .1s, box-shadow .2s;
+  }
+  .btn:active { transform: translateY(1px); }
+  .btn--gold { background: var(--gold); color: var(--ink); box-shadow: 0 10px 22px -10px rgba(217, 154, 0, .9); }
+  .btn--ink { background: var(--ink); color: #fff; box-shadow: 0 10px 22px -12px rgba(23, 33, 58, .7); }
+
+  .footnote { max-width: 440px; margin-top: 16px; font-size: 12px; color: var(--muted); text-align: center; }
+
+  /* Confetes e toast */
+  #confetti { position: fixed; inset: 0; width: 100%; height: 100%; pointer-events: none; z-index: 50; }
+  .toast {
+    position: fixed; left: 50%; bottom: calc(20px + env(safe-area-inset-bottom, 0px)); z-index: 60;
+    transform: translate(-50%, 20px); opacity: 0; pointer-events: none;
+    max-width: calc(100% - 32px);
+    padding: 12px 16px; border-radius: 12px;
+    background: var(--ink); color: #fff; font-size: 14px;
+    transition: opacity .25s, transform .25s;
+  }
+  .toast.show { opacity: 1; transform: translate(-50%, 0); }
+
+  [hidden] { display: none !important; }
+
+  @keyframes pop { from { transform: scale(.7); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  @keyframes rise { from { transform: translateY(10px); opacity: 0; } to { transform: none; opacity: 1; } }
+
+  @media (min-width: 640px) {
+    .page { padding-top: 48px; }
+    .ticket-head { padding: 34px 32px 20px; }
+    .scratch-section { padding: 6px 28px 30px; }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after { animation-duration: .01ms !important; animation-iteration-count: 1 !important; transition-duration: .01ms !important; }
+  }
+</style>
+</head>
+<body>
+
+<!-- Controle de teste: remover na integração real -->
+<div class="proto" role="group" aria-label="Controle de teste do protótipo">
+  <span class="proto-label">Modo protótipo</span>
+  <div class="seg">
+    <button type="button" data-scenario="no_prize" aria-pressed="true">Testar: Não ganhou</button>
+    <button type="button" data-scenario="prize" aria-pressed="false">Testar: Ganhou R$ 100</button>
+  </div>
+</div>
+
+<main class="page">
+  <article class="ticket">
+    <header class="ticket-head">
+      <div class="check" aria-hidden="true">
+        <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg>
+      </div>
+      <h1>🎉 Compra realizada!</h1>
+      <p class="lead">Seus números foram confirmados.</p>
+      <div class="numbers-block">
+        <p class="numbers-label" id="raffleName"></p>
+        <ul class="numbers" id="numbers" aria-labelledby="raffleName"></ul>
+      </div>
+    </header>
+
+    <div class="perf" aria-hidden="true"><span class="notch notch--l"></span><span class="notch notch--r"></span></div>
+
+    <section class="scratch-section" aria-labelledby="statusTitle">
+      <p class="bonus-title" id="statusTitle">🎁 Você ganhou uma raspadinha!</p>
+      <p class="bonus-sub" id="statusSub" aria-live="polite">Raspe a área abaixo para descobrir seu prêmio.</p>
+
+      <div class="scratch" id="scratch">
+        <div class="prize" id="prize" aria-hidden="true"></div>
+        <canvas id="cover" role="img" aria-label="Área prateada da raspadinha. Raspe com o dedo ou o mouse."></canvas>
+      </div>
+
+      <div class="meter" id="meter" aria-hidden="true"><span id="meterBar"></span></div>
+      <p class="hint" id="hint">Passe o dedo ou o mouse sobre a área para raspar.</p>
+      <button type="button" class="link-btn" id="revealAll">Revelar sem raspar</button>
+
+      <div class="outcome" id="outcome" role="status" hidden>
+        <p class="outcome-text" id="outcomeText"></p>
+        <a class="btn" id="outcomeCta" href="#"></a>
+      </div>
+    </section>
+  </article>
+
+  <p class="footnote">O resultado da raspadinha é definido no momento da compra. Esta tela apenas revela o que já foi sorteado.</p>
+</main>
+
+<canvas id="confetti" aria-hidden="true"></canvas>
+<div class="toast" id="toast" role="status"></div>
+
+<script>
+(() => {
+  'use strict';
+
+  const REDUCED_MOTION = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  const CANVAS_FONT = '"Bricolage Grotesque", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif';
+  const wait = (ms) => new Promise((r) => setTimeout(r, ms));
+
+  /* =====================================================================
+   * 1. CAMADA DE DADOS
+   * ---------------------------------------------------------------------
+   * O frontend NUNCA sorteia. Ele recebe um resultado pronto do backend
+   * e só apresenta a raspadinha. Para integrar, troque o corpo de
+   * ScratchAPI.getResult() pelo fetch comentado e remova o mock.
+   * ===================================================================== */
+
+  // Dados da compra (em produção viriam da página de confirmação / API)
+  const PURCHASE = {
+    id: 'cmp_8F2K91',
+    raffleName: 'Rifa Moto 0km',
+    numbers: ['0412', '1877', '2230', '3095']
+  };
+
+  // Respostas simuladas do backend
+  const MOCK_RESULTS = {
+    no_prize: {
+      id: 'rsp_demo_001',
+      type: 'no_prize',
+      value: 0,
+      title: 'Não foi dessa vez',
+      subtitle: 'Mas você ainda pode ter sorte na rifa!',
+      message: 'Mas não desanime! Seus números da rifa continuam concorrendo aos prêmios principais.',
+      cta: { label: 'Ver meus números', href: '#meus-numeros' }
+    },
+    prize: {
+      id: 'rsp_demo_002',
+      type: 'prize',
+      value: 100,
+      title: 'Você ganhou R$ 100,00!',
+      subtitle: 'Parabéns!',
+      message: 'Parabéns! Seu prêmio foi de R$ 100,00.',
+      cta: { label: 'Ver meu prêmio', href: '#meu-premio' }
+    }
+  };
+
+  let mockScenario = 'no_prize'; // alterado pela barra de teste
+
+  const ScratchAPI = {
+    /** Busca a raspadinha já sorteada para esta compra. */
+    async getResult(purchaseId) {
+      // PRODUÇÃO:
+      // const res = await fetch(`/api/compras/${encodeURIComponent(purchaseId)}/raspadinha`, { credentials: 'include' });
+      // if (!res.ok) throw new Error('Falha ao carregar a raspadinha');
+      // return res.json(); // { id, type: 'prize' | 'no_prize', value, title, subtitle, message, cta }
+      await wait(350); // simula latência de rede
+      return JSON.parse(JSON.stringify(MOCK_RESULTS[mockScenario]));
+    },
+
+    /** Informa ao backend que o usuário revelou (auditoria / evita reexibir). */
+    async markRevealed(scratchId) {
+      // PRODUÇÃO:
+      // await fetch(`/api/raspadinhas/${encodeURIComponent(scratchId)}/revelar`, { method: 'POST', credentials: 'include' });
+      console.info('[mock] raspadinha revelada:', scratchId);
+    }
+  };
+
+  /* =====================================================================
+   * 2. COMPONENTE DE RASPAGEM (Canvas)
+   * Independente do resultado: só cuida da camada prateada.
+   * ===================================================================== */
+  class ScratchCard {
+    constructor(canvas, opts = {}) {
+      this.canvas = canvas;
+      this.ctx = canvas.getContext('2d', { willReadFrequently: true });
+      this.opts = { threshold: 0.55, ...opts };
+      this.enabled = false;
+      this.done = false;
+      this.drawing = false;
+      this.last = null;
+      this.lastMeasure = 0;
+      this.drawn = false;
+      this.cssW = 0;
+      this.cssH = 0;
+      this._bindPointer();
+      if ('ResizeObserver' in window) {
+        this.ro = new ResizeObserver(() => this._onResize());
+        this.ro.observe(canvas.parentElement);
+      } else {
+        window.addEventListener('resize', () => this._onResize());
+      }
+    }
+
+    async init() {
+      try {
+        if (document.fonts) {
+          await Promise.race([document.fonts.load(`800 32px ${CANVAS_FONT}`), wait(1500)]);
+        }
+      } catch (_) { /* segue com fonte do sistema */ }
+      this.reset();
+    }
+
+    enable()  { this.enabled = true; }
+    disable() { this.enabled = false; this.drawing = false; }
+
+    reset() {
+      this.done = false;
+      this.drawing = false;
+      this.last = null;
+      this.canvas.classList.remove('is-clearing', 'is-gone');
+      this._size();
+      this._drawCover();
+    }
+
+    revealAll() {
+      if (this.done) return;
+      this.done = true;
+      this.disable();
+      if (this.opts.onProgress) this.opts.onProgress(1);
+      this.canvas.classList.add('is-clearing');
+      setTimeout(() => this.canvas.classList.add('is-gone'), REDUCED_MOTION ? 0 : 650);
+      if (this.opts.onComplete) this.opts.onComplete();
+    }
+
+    /* ---- tamanho e desenho ---- */
+    _size() {
+      const r = this.canvas.parentElement.getBoundingClientRect();
+      this.dpr = Math.min(window.devicePixelRatio || 1, 2);
+      this.cssW = r.width;
+      this.cssH = r.height;
+      this.canvas.width = Math.max(1, Math.round(r.width * this.dpr));
+      this.canvas.height = Math.max(1, Math.round(r.height * this.dpr));
+      this.ctx.setTransform(this.dpr, 0, 0, this.dpr, 0, 0);
+      this.brush = Math.max(18, r.width * 0.06);
+    }
+
+    _onResize() {
+      if (!this.drawn || this.done) return;
+      const r = this.canvas.parentElement.getBoundingClientRect();
+      if (Math.abs(r.width - this.cssW) < 1 && Math.abs(r.height - this.cssH) < 1) return;
+      // preserva o que já foi raspado ao redimensionar
+      const snap = document.createElement('canvas');
+      snap.width = this.canvas.width;
+      snap.height = this.canvas.height;
+      snap.getContext('2d').drawImage(this.canvas, 0, 0);
+      this._size();
+      this._drawCover();
+      const { ctx } = this;
+      ctx.save();
+      ctx.globalCompositeOperation = 'destination-in';
+      ctx.drawImage(snap, 0, 0, this.cssW, this.cssH);
+      ctx.restore();
+    }
+
+    _drawCover() {
+      const { ctx } = this;
+      const w = this.cssW, h = this.cssH;
+      ctx.save();
+      ctx.globalCompositeOperation = 'source-over';
+      ctx.clearRect(0, 0, w, h);
+
+      // base metálica
+      const g = ctx.createLinearGradient(0, 0, w, h);
+      [[0, '#AEB5C0'], [.22, '#E9ECF1'], [.45, '#B9C0CA'], [.62, '#F4F6F9'], [.82, '#A8B0BC'], [1, '#D6DAE1']]
+        .forEach(([s, c]) => g.addColorStop(s, c));
+      ctx.fillStyle = g;
+      ctx.fillRect(0, 0, w, h);
+
+      // linhas de metal escovado
+      for (let y = 0; y < h; y += 1.5) {
+        ctx.fillStyle = `rgba(255,255,255,${(Math.random() * 0.10).toFixed(3)})`;
+        ctx.fillRect(0, y, w, 0.75);
+      }
+
+      // granulado
+      const grains = Math.floor((w * h) / 18);
+      for (let i = 0; i < grains; i++) {
+        ctx.fillStyle = Math.random() < 0.5 ? 'rgba(40,48,64,.08)' : 'rgba(255,255,255,.2)';
+        ctx.fillRect(Math.random() * w, Math.random() * h, 1, 1);
+      }
+
+      // padrão de símbolos
+      ctx.font = `700 13px ${CANVAS_FONT}`;
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.fillStyle = 'rgba(70,80,98,.14)';
+      const glyphs = ['✦', '$', '★', '$'];
+      let k = 0, row = 0;
+      for (let y = 14; y < h; y += 28, row++) {
+        for (let x = (row % 2) * 18 + 12; x < w; x += 36) ctx.fillText(glyphs[k++ % glyphs.length], x, y);
+      }
+
+      // brilho diagonal
+      const sheen = ctx.createLinearGradient(0, 0, w, h * 0.6);
+      sheen.addColorStop(0.30, 'rgba(255,255,255,0)');
+      sheen.addColorStop(0.45, 'rgba(255,255,255,.35)');
+      sheen.addColorStop(0.55, 'rgba(255,255,255,0)');
+      ctx.fillStyle = sheen;
+      ctx.fillRect(0, 0, w, h);
+
+      // moldura picotada
+      ctx.setLineDash([6, 5]);
+      ctx.lineWidth = 1.5;
+      ctx.strokeStyle = 'rgba(255,255,255,.7)';
+      roundRect(ctx, 8, 8, w - 16, h - 16, 12);
+      ctx.stroke();
+      ctx.setLineDash([]);
+
+      // placa central
+      const pw = Math.min(w * 0.78, 300), ph = Math.max(78, h * 0.4);
+      const px = (w - pw) / 2, py = (h - ph) / 2;
+      ctx.shadowColor = 'rgba(23,33,58,.22)';
+      ctx.shadowBlur = 14;
+      ctx.shadowOffsetY = 4;
+      const pg = ctx.createLinearGradient(0, py, 0, py + ph);
+      pg.addColorStop(0, '#F7F8FA');
+      pg.addColorStop(1, '#D4D9E0');
+      ctx.fillStyle = pg;
+      roundRect(ctx, px, py, pw, ph, 14);
+      ctx.fill();
+      ctx.shadowColor = 'transparent';
+      ctx.strokeStyle = 'rgba(255,255,255,.9)';
+      ctx.lineWidth = 1;
+      ctx.stroke();
+
+      // texto em relevo
+      const size = Math.round(Math.min(36, Math.max(22, w * 0.085)));
+      ctx.font = `800 ${size}px ${CANVAS_FONT}`;
+      const ty = py + ph * 0.44;
+      ctx.fillStyle = 'rgba(255,255,255,.9)';
+      ctx.fillText('RASPE AQUI!', w / 2, ty + 1.5);
+      ctx.fillStyle = '#4A5261';
+      ctx.fillText('RASPE AQUI!', w / 2, ty);
+
+      ctx.font = `600 ${Math.max(12, Math.round(size * 0.4))}px ${CANVAS_FONT}`;
+      ctx.fillStyle = '#6B7383';
+      ctx.fillText('com o dedo ou o mouse', w / 2, py + ph * 0.76);
+
+      ctx.restore();
+      this.drawn = true;
+    }
+
+    /* ---- interação ---- */
+    _bindPointer() {
+      const c = this.canvas;
+
+      const begin = (x, y) => {
+        if (!this.enabled || this.done) return false;
+        this.drawing = true;
+        const p = this._point(x, y);
+        this.last = p;
+        this._stroke(p, p);
+        if (this.opts.onStart) this.opts.onStart();
+        return true;
+      };
+      const move = (x, y) => {
+        if (!this.drawing) return;
+        const p = this._point(x, y);
+        this._stroke(this.last || p, p);
+        this.last = p;
+        this._measureThrottled();
+      };
+      const end = () => {
+        if (!this.drawing) return;
+        this.drawing = false;
+        this.last = null;
+        this._measure();
+      };
+
+      /* TOQUE (iPhone/Android): eventos nativos com passive:false.
+         É a forma mais confiável no Safari iOS de impedir a rolagem
+         da página e receber o movimento contínuo do dedo. */
+      const opts = { passive: false };
+      c.addEventListener('touchstart', (e) => {
+        if (!this.enabled || this.done) return;
+        e.preventDefault();
+        const t = e.changedTouches[0];
+        this.touchId = t.identifier;
+        begin(t.clientX, t.clientY);
+      }, opts);
+      c.addEventListener('touchmove', (e) => {
+        if (!this.drawing) return;
+        e.preventDefault();
+        for (const t of e.changedTouches) {
+          if (t.identifier === this.touchId) move(t.clientX, t.clientY);
+        }
+      }, opts);
+      const touchEnd = (e) => {
+        for (const t of e.changedTouches) {
+          if (t.identifier === this.touchId) { this.touchId = null; end(); }
+        }
+      };
+      c.addEventListener('touchend', touchEnd);
+      c.addEventListener('touchcancel', touchEnd);
+
+      /* MOUSE / CANETA: Pointer Events, ignorando toque (já tratado acima). */
+      if (window.PointerEvent) {
+        c.addEventListener('pointerdown', (e) => {
+          if (e.pointerType === 'touch') return;
+          if (!begin(e.clientX, e.clientY)) return;
+          e.preventDefault();
+          try { c.setPointerCapture(e.pointerId); } catch (_) {}
+        });
+        c.addEventListener('pointermove', (e) => {
+          if (e.pointerType === 'touch' || !this.drawing) return;
+          const list = e.getCoalescedEvents ? e.getCoalescedEvents() : [];
+          for (const ev of (list.length ? list : [e])) move(ev.clientX, ev.clientY);
+        });
+        c.addEventListener('pointerup', (e) => { if (e.pointerType !== 'touch') end(); });
+        c.addEventListener('pointercancel', (e) => { if (e.pointerType !== 'touch') end(); });
+      } else {
+        c.addEventListener('mousedown', (e) => { if (begin(e.clientX, e.clientY)) e.preventDefault(); });
+        window.addEventListener('mousemove', (e) => move(e.clientX, e.clientY));
+        window.addEventListener('mouseup', end);
+      }
+    }
+
+    _point(clientX, clientY) {
+      const r = this.canvas.getBoundingClientRect();
+      // compensa a diferença entre o tamanho CSS e o tamanho medido
+      const sx = this.cssW / (r.width || 1), sy = this.cssH / (r.height || 1);
+      return { x: (clientX - r.left) * sx, y: (clientY - r.top) * sy };
+    }
+
+    _stroke(a, b) {
+      const { ctx } = this;
+      ctx.save();
+      ctx.globalCompositeOperation = 'destination-out';
+      ctx.lineCap = 'round';
+      ctx.lineJoin = 'round';
+      ctx.lineWidth = this.brush * 2;
+      ctx.beginPath();
+      ctx.moveTo(a.x, a.y);
+      ctx.lineTo(b.x + 0.01, b.y + 0.01);
+      ctx.stroke();
+      ctx.restore();
+    }
+
+    _measureThrottled() {
+      const now = performance.now();
+      if (now - this.lastMeasure > 120) {
+        this.lastMeasure = now;
+        this._measure();
+      }
+    }
+
+    /** Percentual aproximado raspado (amostragem de 1 a cada 6 pixels). */
+    _measure() {
+      if (this.done) return;
+      const { width, height } = this.canvas;
+      const data = this.ctx.getImageData(0, 0, width, height).data;
+      const stride = 4 * 6;
+      let clear = 0, total = 0;
+      for (let i = 3; i < data.length; i += stride) {
+        total++;
+        if (data[i] < 100) clear++;
+      }
+      const progress = total ? clear / total : 0;
+      if (this.opts.onProgress) this.opts.onProgress(progress);
+      if (progress >= this.opts.threshold) this.revealAll();
+    }
+  }
+
+  function roundRect(ctx, x, y, w, h, r) {
+    ctx.beginPath();
+    ctx.moveTo(x + r, y);
+    ctx.arcTo(x + w, y, x + w, y + h, r);
+    ctx.arcTo(x + w, y + h, x, y + h, r);
+    ctx.arcTo(x, y + h, x, y, r);
+    ctx.arcTo(x, y, x + w, y, r);
+    ctx.closePath();
+  }
+
+  /* =====================================================================
+   * 3. CONFETES
+   * ===================================================================== */
+  const Confetti = (() => {
+    const c = document.getElementById('confetti');
+    const ctx = c.getContext('2d');
+    const colors = ['#F5B800', '#FFD95A', '#0E9F6E', '#34C98E', '#17213A', '#FF6B6B', '#4D8DFF'];
+    let parts = [], raf = 0;
+
+    function resize() {
+      const d = Math.min(window.devicePixelRatio || 1, 2);
+      c.width = innerWidth * d;
+      c.height = innerHeight * d;
+      ctx.setTransform(d, 0, 0, d, 0, 0);
+    }
+
+    function make(x, y, vx, vy) {
+      return {
+        x, y, vx, vy,
+        w: 6 + Math.random() * 6, h: 8 + Math.random() * 8,
+        rot: Math.random() * Math.PI * 2, vr: (Math.random() - 0.5) * 0.3,
+        tilt: Math.random() * Math.PI * 2,
+        color: colors[(Math.random() * colors.length) | 0],
+        circle: Math.random() < 0.2,
+        life: 0
+      };
+    }
+
+    function burst(el) {
+      resize();
+      const r = el.getBoundingClientRect();
+      const ox = r.left + r.width / 2, oy = r.top + r.height / 2;
+      const n = REDUCED_MOTION ? 30 : 150;
+      for (let i = 0; i < n; i++) {
+        const a = -Math.PI / 2 + (Math.random() - 0.5) * Math.PI * 1.2;
+        const sp = 9 + Math.random() * 10;
+        parts.push(make(ox, oy, Math.cos(a) * sp, Math.sin(a) * sp));
+      }
+      if (!REDUCED_MOTION) {
+        setTimeout(() => {
+          for (let i = 0; i < 70; i++) {
+            parts.push(make(Math.random() * innerWidth, -20 - Math.random() * 80, (Math.random() - 0.5) * 2, 2 + Math.random() * 3));
+          }
+          start();
+        }, 280);
+      }
+      start();
+    }
+
+    function start() { if (!raf) raf = requestAnimationFrame(tick); }
+
+    function tick() {
+      ctx.clearRect(0, 0, innerWidth, innerHeight);
+      parts = parts.filter((p) => p.y < innerHeight + 40 && p.life < 360);
+      for (const p of parts) {
+        p.life++;
+        p.vx *= 0.985;
+        p.vy = p.vy * 0.97 + 0.22;
+        p.x += p.vx + Math.sin(p.tilt) * 0.6;
+        p.y += p.vy;
+        p.rot += p.vr;
+        p.tilt += 0.12;
+        ctx.save();
+        ctx.translate(p.x, p.y);
+        ctx.rotate(p.rot);
+        ctx.fillStyle = p.color;
+        if (p.circle) {
+          ctx.beginPath();
+          ctx.arc(0, 0, p.w / 2.2, 0, Math.PI * 2);
+          ctx.fill();
+        } else {
+          const sh = p.h * Math.abs(Math.cos(p.tilt));
+          ctx.fillRect(-p.w / 2, -sh / 2, p.w, sh);
+        }
+        ctx.restore();
+      }
+      if (parts.length) raf = requestAnimationFrame(tick);
+      else { raf = 0; ctx.clearRect(0, 0, innerWidth, innerHeight); }
+    }
+
+    function stop() {
+      parts = [];
+      cancelAnimationFrame(raf);
+      raf = 0;
+      ctx.clearRect(0, 0, c.width, c.height);
+    }
+
+    return { burst, stop };
+  })();
+
+  /* =====================================================================
+   * 4. TELA (apresentação do resultado recebido)
+   * ===================================================================== */
+  const $ = (id) => document.getElementById(id);
+  const els = {
+    statusTitle: $('statusTitle'), statusSub: $('statusSub'),
+    scratch: $('scratch'), prize: $('prize'), cover: $('cover'),
+    meter: $('meter'), meterBar: $('meterBar'), hint: $('hint'), revealAll: $('revealAll'),
+    outcome: $('outcome'), outcomeText: $('outcomeText'), outcomeCta: $('outcomeCta'),
+    toast: $('toast')
+  };
+
+  const THRESHOLD = 0.55;
+  let current = null;
+  let state = 'loading';
+  let loadToken = 0;
+
+  const escapeHTML = (s) => String(s).replace(/[&<>"']/g, (ch) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[ch]));
+
+  function formatBRLParts(value) {
+    const parts = new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).formatToParts(value);
+    const cur = parts.filter((p) => p.type === 'currency').map((p) => p.value).join('');
+    const num = parts.filter((p) => !['currency', 'literal'].includes(p.type)).map((p) => p.value).join('');
+    return { cur, num };
+  }
+
+  function renderPurchase() {
+    $('raffleName').textContent = `Seus números na ${PURCHASE.raffleName}`;
+    $('numbers').innerHTML = PURCHASE.numbers.map((n) => `<li>${escapeHTML(n)}</li>`).join('');
+  }
+
+  function renderPrize(r) {
+    els.prize.className = 'prize';
+    if (r.type === 'prize') {
+      const { cur, num } = formatBRLParts(r.value);
+      els.prize.classList.add('prize--win');
+      els.prize.innerHTML = `
+        <div class="rays" aria-hidden="true"></div>
+        <div class="prize-inner">
+          <span class="prize-emoji" aria-hidden="true">🎉</span>
+          <p class="prize-kicker">${escapeHTML(r.subtitle || 'Parabéns!')}</p>
+          <p class="prize-label">Você ganhou</p>
+          <p class="prize-amount"><span class="cur">${escapeHTML(cur)}</span>${escapeHTML(num)}</p>
+        </div>`;
+    } else {
+      els.prize.classList.add('prize--none');
+      els.prize.innerHTML = `
+        <div class="prize-inner">
+          <span class="prize-emoji" aria-hidden="true">🎟️</span>
+          <p class="prize-title">${escapeHTML(r.title)} 😔</p>
+          <p class="prize-sub">${escapeHTML(r.subtitle || '')}</p>
+        </div>`;
+    }
+    els.outcomeText.textContent = r.message;
+    els.outcomeCta.textContent = r.cta.label;
+    els.outcomeCta.href = r.cta.href;
+    els.outcomeCta.className = 'btn ' + (r.type === 'prize' ? 'btn--gold' : 'btn--ink');
+  }
+
+  function setState(next) {
+    state = next;
+    const scratching = next === 'ready' || next === 'scratching';
+    els.hint.hidden = !scratching;
+    els.revealAll.hidden = !scratching;
+    els.meter.hidden = !scratching && next !== 'loading';
+
+    switch (next) {
+      case 'loading':
+        els.statusTitle.textContent = '🎁 Você ganhou uma raspadinha!';
+        els.statusSub.textContent = 'Preparando sua raspadinha…';
+        break;
+      case 'ready':
+        els.statusTitle.textContent = '🎁 Você ganhou uma raspadinha!';
+        els.statusSub.textContent = 'Raspe a área abaixo para descobrir seu prêmio.';
+        break;
+      case 'scratching':
+        els.statusSub.textContent = 'Continue raspando…';
+        break;
+      case 'revealed':
+        if (current && current.type === 'prize') {
+          els.statusTitle.textContent = '🍀 Que sorte!';
+          els.statusSub.textContent = current.title;
+        } else {
+          els.statusTitle.textContent = 'Raspadinha revelada';
+          els.statusSub.textContent = 'Confira o resultado abaixo.';
+        }
+        break;
+      case 'error':
+        els.statusSub.textContent = 'Não foi possível carregar sua raspadinha. Atualize a página para tentar de novo.';
+        break;
+    }
+  }
+
+  const card = new ScratchCard(els.cover, {
+    threshold: THRESHOLD,
+    onProgress(p) {
+      els.meterBar.style.width = `${Math.min(p / THRESHOLD, 1) * 100}%`;
+      if (p > 0.015 && state === 'ready') setState('scratching');
+    },
+    onComplete() {
+      setState('revealed');
+      els.prize.setAttribute('aria-hidden', 'false');
+      els.prize.classList.add('is-revealed');
+      setTimeout(() => { els.outcome.hidden = false; }, REDUCED_MOTION ? 0 : 350);
+      if (current && current.type === 'prize') {
+        Confetti.burst(els.scratch);
+        if (navigator.vibrate) navigator.vibrate([30, 40, 60]);
+      }
+      if (current) ScratchAPI.markRevealed(current.id).catch(console.error);
+    }
+  });
+
+  async function loadScratch() {
+    const token = ++loadToken;
+    current = null;
+    Confetti.stop();
+    card.disable();
+    card.reset();
+    els.prize.className = 'prize';
+    els.prize.innerHTML = '';
+    els.prize.setAttribute('aria-hidden', 'true');
+    els.outcome.hidden = true;
+    els.meterBar.style.width = '0%';
+    setState('loading');
+
+    try {
+      const result = await ScratchAPI.getResult(PURCHASE.id);
+      if (token !== loadToken) return; // outra carga começou
+      current = result;
+      renderPrize(result);
+      card.enable();
+      setState('ready');
+    } catch (err) {
+      console.error(err);
+      if (token === loadToken) setState('error');
+    }
+  }
+
+  function toast(msg) {
+    els.toast.textContent = msg;
+    els.toast.classList.add('show');
+    clearTimeout(toast.t);
+    toast.t = setTimeout(() => els.toast.classList.remove('show'), 2600);
+  }
+
+  /* ---- eventos ---- */
+  document.querySelectorAll('.seg button').forEach((btn) => {
+    btn.addEventListener('click', () => {
+      mockScenario = btn.dataset.scenario;
+      document.querySelectorAll('.seg button').forEach((b) => b.setAttribute('aria-pressed', String(b === btn)));
+      loadScratch();
+    });
+  });
+
+  els.revealAll.addEventListener('click', () => { if (card.enabled) card.revealAll(); });
+
+  els.outcomeCta.addEventListener('click', (e) => {
+    e.preventDefault(); // protótipo: em produção, deixar navegar para cta.href
+    toast(`Protótipo: aqui abriria ${els.outcomeCta.getAttribute('href')}`);
+  });
+
+  /* ---- início ---- */
+  renderPurchase();
+  card.init().then(loadScratch);
+})();
+</script>
+</body>
+</html>
